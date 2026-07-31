@@ -11,6 +11,8 @@ import NotesPage from './pages/NotesPage';
 import ProjectsPage from './pages/ProjectsPage';
 import LearningPage from './pages/LearningPage';
 import SearchPage from './pages/SearchPage';
+import DocumentsPage from './pages/DocumentsPage';
+import ProfilePage from './pages/ProfilePage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import { fetchCurrentUser } from './features/auth/authSlice';
@@ -42,7 +44,9 @@ function AppRoutes() {
         <Route path="/notes" element={<NotesPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/learning" element={<LearningPage />} />
+        <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Route>
       <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

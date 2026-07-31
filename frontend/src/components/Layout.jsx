@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, CheckSquare, StickyNote, FolderKanban, GraduationCap, Search, LogOut, Sparkles } from 'lucide-react';
+import { Home, CheckSquare, StickyNote, FolderKanban, GraduationCap, Search, LogOut, Sparkles, FileText, User } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutLocal } from '../features/auth/authSlice';
 import api from '../lib/api';
@@ -11,6 +11,7 @@ const links = [
   { to: '/notes', label: 'Notes', icon: StickyNote },
   { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/learning', label: 'Learning', icon: GraduationCap },
+  { to: '/documents', label: 'Documents', icon: FileText },
   { to: '/search', label: 'Search', icon: Search },
 ];
 
@@ -61,10 +62,21 @@ export default function Layout() {
           <div className="mt-8 rounded-2xl border border-white/10 bg-slate-800/70 p-4">
             <p className="text-sm font-medium">{user?.fullName || 'Welcome back'}</p>
             <p className="mt-1 text-sm text-slate-400">{user?.email || 'Ready to focus'}</p>
-            <button onClick={handleLogout} className="mt-4 flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5">
-              <LogOut size={16} />
-              Sign out
-            </button>
+            <div className="mt-4 flex flex-col gap-2">
+              <NavLink
+                to="/profile"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 ${isActive ? 'bg-violet-500/10 text-violet-200' : ''}`
+                }
+              >
+                <User size={16} />
+                Profile
+              </NavLink>
+              <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5">
+                <LogOut size={16} />
+                Sign out
+              </button>
+            </div>
           </div>
         </aside>
 
