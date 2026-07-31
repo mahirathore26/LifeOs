@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema(
         username: {
             type: String,
             required: [true, "Username is required"],
-            
+            unique: true,
             lowercase: true,
             trim: true,
             minlength: 3,
@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema(
             required: [true, "Email is required"],
             lowercase: true,
             trim: true,
+            unique: true,
             validate: {
                 validator: validator.isEmail,
                 message: "Invalid email address",
@@ -163,8 +164,7 @@ userSchema.methods.toJSON = function () {
     return user;
 };
 
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+
 
 const User = mongoose.model("User", userSchema);
 

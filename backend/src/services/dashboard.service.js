@@ -221,6 +221,25 @@ const buildPendingTasks = async (userId) =>
                 dueDateSort: {
                     $ifNull: ["$dueDate", new Date("9999-12-31T23:59:59.999Z")],
                 },
+                priorityWeight: {
+                    $switch: {
+                        branches: [
+                            {
+                                case: { $eq: ["$priority", "HIGH"] },
+                                then: 3,
+                            },
+                            {
+                                case: { $eq: ["$priority", "MEDIUM"] },
+                                then: 2,
+                            },
+                            {
+                                case: { $eq: ["$priority", "LOW"] },
+                                then: 1,
+                            },
+                        ],
+                        default: 0,
+                    },
+                },
             },
         },
         {
@@ -232,6 +251,8 @@ const buildPendingTasks = async (userId) =>
                 dueDate: 1,
                 updatedAt: 1,
                 createdAt: 1,
+                dueDateSort: 1,
+                priorityWeight: 1,
                 project: {
                     $let: {
                         vars: {
@@ -245,13 +266,12 @@ const buildPendingTasks = async (userId) =>
                         },
                     },
                 },
-                dueDateSort: 1,
             },
         },
         {
             $sort: {
                 dueDateSort: 1,
-                priority: -1,
+                priorityWeight: -1,
                 updatedAt: -1,
             },
         },
@@ -261,6 +281,7 @@ const buildPendingTasks = async (userId) =>
         {
             $project: {
                 dueDateSort: 0,
+                priorityWeight: 0,
             },
         },
     ]);
@@ -446,12 +467,34 @@ const buildDocumentSummaries = async (userId) => {
                 ],
                 recentDocuments: [
                     {
+                        $lookup: {
+                            from: "projects",
+                            localField: "project",
+                            foreignField: "_id",
+                            as: "project",
+                        },
+                    },
+                    {
                         $project: {
                             title: 1,
                             description: 1,
-                            project: 1,
                             updatedAt: 1,
                             createdAt: 1,
+                            project: {
+                                $let: {
+                                    vars: {
+                                        project: {
+                                            $arrayElemAt: ["$project", 0],
+                                        },
+                                    },
+                                    in: {
+                                        _id: "$$project._id",
+                                        name: "$$project.name",
+                                        color: "$$project.color",
+                                        icon: "$$project.icon",
+                                    },
+                                },
+                            },
                             file: {
                                 originalName: "$file.originalName",
                                 mimeType: "$file.mimeType",

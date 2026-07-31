@@ -11,7 +11,7 @@ import {
     unarchiveNoteService,
     unpinNoteService,
     updateNoteService,
-} from "../services/notes.sevice.js";
+} from "../services/notes.service.js";
 
 export const createNote = asyncHandler(async (req, res) => {
     const note = await createNoteService(req.user._id, req.body);

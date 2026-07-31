@@ -33,11 +33,21 @@ export const getDueRevisionsService = async (userId) => {
 };
 
 export const createRevisionService = async (userId, payload) => {
+    if (!mongoose.isValidObjectId(payload.resource)) {
+        throw new ApiError(400, "Invalid resource ID format");
+    }
+    const resourceExists = await mongoose.model("LearningResource").findOne({ _id: payload.resource, user: userId });
+    if (!resourceExists) {
+        throw new ApiError(404, "Learning resource not found");
+    }
     const rev = await LearningRevision.create({ user: userId, ...payload });
     return rev;
 };
 
 export const markReviewedService = async (userId, id, quality = 5) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(400, "Invalid revision ID format");
+    }
     const rev = await LearningRevision.findOne({ _id: id, user: userId });
     if (!rev) throw new ApiError(404, "Revision not found");
 
@@ -49,8 +59,11 @@ export const markReviewedService = async (userId, id, quality = 5) => {
 };
 
 export const deleteRevisionService = async (userId, id) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(400, "Invalid revision ID format");
+    }
     const rev = await LearningRevision.findOne({ _id: id, user: userId });
     if (!rev) throw new ApiError(404, "Revision not found");
-    await rev.remove();
+    await rev.deleteOne();
     return rev;
 };

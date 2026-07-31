@@ -134,10 +134,10 @@ export const loginUserService = async ({ email, password }) => {
 
 export const logoutUserService = async (userId) => {
     await User.findByIdAndUpdate(userId, {
-        $unset: {
-            [COOKIE_NAMES.REFRESH_TOKEN]: 1,
-        },
-    });
+    $unset: {
+        refreshToken: 1,
+    },
+});
 };
 
 export const refreshAccessTokenService = async (incomingRefreshToken) => {

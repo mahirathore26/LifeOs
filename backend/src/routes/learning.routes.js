@@ -2,36 +2,44 @@ import { Router } from "express";
 import verifyJWT from "../middleware/auth.middleware.js";
 import validate from "../middleware/validate.middleware.js";
 import {
-	addSession,
-	createLearning,
-	deleteLearning,
-	deleteSession,
-	favoriteLearning,
-	getLearningById,
-	getLearnings,
-	restoreLearning,
-	unfavoriteLearning,
-	updateLearning,
-	updateSession,
+    addSession,
+    createLearning,
+    deleteLearning,
+    deleteSession,
+    favoriteLearning,
+    getLearningById,
+    getLearnings,
+    restoreLearning,
+    unfavoriteLearning,
+    updateLearning,
+    updateSession,
+    getAnalytics,
+    getStats,
 } from "../controllers/learning.controller.js";
-import { getAnalytics, getStats } from "../controllers/learning.controller.js";
 import goalsRoutes from "./learning.goals.routes.js";
 import revisionsRoutes from "./learning.revisions.routes.js";
 import {
-	createLearningValidator,
-	learningIdValidator,
-	listLearningValidator,
-	sessionCreateValidator,
-	sessionIdValidator,
-	updateLearningValidator,
+    createLearningValidator,
+    learningIdValidator,
+    listLearningValidator,
+    sessionCreateValidator,
+    sessionIdValidator,
+    updateLearningValidator,
 } from "../validators/learning.validator.js";
 
 const router = Router();
 
 router.use(verifyJWT);
 
+// Collection routes
 router.get("/", listLearningValidator, validate, getLearnings);
 router.post("/", createLearningValidator, validate, createLearning);
+
+// Static routes (must come before /:id)
+router.get("/stats", getStats);
+router.get("/analytics", getAnalytics);
+
+// Resource routes
 router.get("/:id", learningIdValidator, validate, getLearningById);
 router.patch("/:id", updateLearningValidator, validate, updateLearning);
 router.delete("/:id", learningIdValidator, validate, deleteLearning);
@@ -39,14 +47,22 @@ router.patch("/:id/restore", learningIdValidator, validate, restoreLearning);
 router.patch("/:id/favorite", learningIdValidator, validate, favoriteLearning);
 router.patch("/:id/unfavorite", learningIdValidator, validate, unfavoriteLearning);
 
+// Session routes
 router.post("/:id/sessions", sessionCreateValidator, validate, addSession);
-router.patch("/:id/sessions/:sessionId", sessionIdValidator, validate, updateSession);
-router.delete("/:id/sessions/:sessionId", sessionIdValidator, validate, deleteSession);
+router.patch(
+    "/:id/sessions/:sessionId",
+    sessionIdValidator,
+    validate,
+    updateSession
+);
+router.delete(
+    "/:id/sessions/:sessionId",
+    sessionIdValidator,
+    validate,
+    deleteSession
+);
 
-router.get("/stats", getStats);
-router.get("/analytics", getAnalytics);
-
-// submodules
+// Submodules
 router.use("/goals", goalsRoutes);
 router.use("/revisions", revisionsRoutes);
 

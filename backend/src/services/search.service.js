@@ -7,7 +7,7 @@ import {
     buildPaginationResponse,
     getPagination,
 } from "../utils/pagination.js";
-
+import ApiError from "../utils/ApiError.js";
 const defaultTypes = ["note", "task", "project", "document"];
 
 const buildRegex = (value) => new RegExp(value.trim(), "i");
@@ -23,6 +23,10 @@ const buildBaseFilters = (userId, query) => {
     };
 
     if (query.project) {
+        if (!mongoose.isValidObjectId(query.project)) {
+            throw new ApiError(400, "Invalid project id");
+        }
+
         filters.project = toObjectId(query.project);
     }
 
@@ -38,10 +42,13 @@ const searchNotes = async (userId, query) => {
     if (typeof query.isArchived === "boolean") {
         filters.isArchived = query.isArchived;
     }
-
-    if (query.tag) {
-        filters.tags = toObjectId(query.tag);
+if (query.tag) {
+    if (!mongoose.isValidObjectId(query.tag)) {
+        throw new ApiError(400, "Invalid tag id");
     }
+
+    filters.tags = toObjectId(query.tag);
+}
 
     if (query.q) {
         const regex = buildRegex(query.q);
@@ -75,8 +82,12 @@ const searchTasks = async (userId, query) => {
     };
 
     if (query.tag) {
-        filters.tags = toObjectId(query.tag);
+    if (!mongoose.isValidObjectId(query.tag)) {
+        throw new ApiError(400, "Invalid tag id");
     }
+
+    filters.tags = toObjectId(query.tag);
+}
 
     if (query.status) {
         filters.status = query.status;

@@ -18,9 +18,9 @@ const buildProjectFilters = (userId, query = {}) => {
         user: new mongoose.Types.ObjectId(userId),
     };
 
-    if (typeof query.isArchived === "boolean") {
-        filters.isArchived = query.isArchived;
-    }
+    if (query.isArchived !== undefined) {
+    filters.isArchived = query.isArchived === "true";
+}
 
     if (query.search) {
         const regex = new RegExp(query.search.trim(), "i");
@@ -213,6 +213,10 @@ export const getProjectsService = async (userId, query) => {
 };
 
 export const getProjectByIdService = async (userId, projectId) => {
+    if (!mongoose.isValidObjectId(projectId)) {
+        throw new ApiError(400, "Invalid project id");
+    }
+
     const [project] = await Project.aggregate(
         projectProgressPipeline(userId, {
             _id: new mongoose.Types.ObjectId(projectId),
@@ -238,7 +242,9 @@ export const updateProjectService = async (userId, projectId, payload) => {
 
 export const archiveProjectService = async (userId, projectId) => {
     const project = await ensureProjectOwnership(userId, projectId);
-
+      if (project.isArchived) {
+    throw new ApiError(400, "Project is already archived");
+}
     project.isArchived = true;
     await project.save();
 
@@ -247,7 +253,9 @@ export const archiveProjectService = async (userId, projectId) => {
 
 export const unarchiveProjectService = async (userId, projectId) => {
     const project = await ensureProjectOwnership(userId, projectId);
-
+     if (!project.isArchived) {
+    throw new ApiError(400, "Project is not archived");
+}
     project.isArchived = false;
     await project.save();
 

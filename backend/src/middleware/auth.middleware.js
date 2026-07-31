@@ -13,10 +13,16 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, "Unauthorized request");
     }
 
-    const decodedToken = verifyToken(
+    let decodedToken;
+
+try {
+    decodedToken = verifyToken(
         token,
         process.env.ACCESS_TOKEN_SECRET
     );
+} catch {
+    throw new ApiError(401, "Invalid or expired access token");
+}
 
     const user = await User.findById(decodedToken?._id).select(
         "-password -refreshToken -passwordResetToken -passwordResetTokenExpiry -emailVerificationToken -emailVerificationTokenExpiry"

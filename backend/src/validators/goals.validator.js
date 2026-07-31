@@ -16,5 +16,5 @@ export const goalIdValidator = [...mongoIdParamValidator("id")];
 
 export const addResourceValidator = [
     ...mongoIdParamValidator("id"),
-    body("resourceId").trim().notEmpty().withMessage("resourceId is required"),
+    body("resourceId").trim().notEmpty().withMessage("resourceId is required").custom((value) => mongoose.Types.ObjectId.isValid(value)).withMessage("Invalid resourceId"),
 ];

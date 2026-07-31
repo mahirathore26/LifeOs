@@ -35,7 +35,7 @@ const statusCompletionMap = {
 const buildTaskFilters = (userId, query = {}) => {
     const filters = {
         user: new mongoose.Types.ObjectId(userId),
-        isDeleted: query.isDeleted === true,
+        isDeleted: query.isDeleted === "true",
     };
 
     if (query.search) {
@@ -56,22 +56,30 @@ const buildTaskFilters = (userId, query = {}) => {
     }
 
     if (query.project) {
-        filters.project = new mongoose.Types.ObjectId(query.project);
+        if (!mongoose.isValidObjectId(query.project)) {
+    throw new ApiError(400, "Invalid project id");
+}
+
+filters.project = new mongoose.Types.ObjectId(query.project);
     }
 
     if (query.tag) {
-        filters.tags = new mongoose.Types.ObjectId(query.tag);
+        if (!mongoose.isValidObjectId(query.tag)) {
+    throw new ApiError(400, "Invalid tag id");
+}
+
+filters.tags = new mongoose.Types.ObjectId(query.tag);
     }
 
     if (query.dueDateFrom || query.dueDateTo) {
         filters.dueDate = {};
 
         if (query.dueDateFrom) {
-            filters.dueDate.$gte = query.dueDateFrom;
+            filters.dueDate.$gte = new Date(query.dueDateFrom);
         }
 
         if (query.dueDateTo) {
-            filters.dueDate.$lte = query.dueDateTo;
+            filters.dueDate.$lte = new Date(query.dueDateTo);
         }
     }
 
@@ -179,12 +187,12 @@ export const createTaskService = async (userId, payload) => {
     await ensureProjectOwnership(userId, taskPayload.project);
     taskPayload.tags = await ensureTagsOwnership(userId, taskPayload.tags);
 
-    const task = new Task({
-        user: userId,
-    });
+    const task = await Task.create({
+    user: userId,
+    ...taskPayload,
+});
 
-    applyTaskState(task, taskPayload);
-    await task.save();
+return task;
 
     return task;
 };

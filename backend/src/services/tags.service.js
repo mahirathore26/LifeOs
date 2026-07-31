@@ -2,7 +2,7 @@ import Tag from "../models/Tag.model.js";
 import Note from "../models/Note.model.js";
 import Task from "../models/Task.model.js";
 import ApiError from "../utils/ApiError.js";
-
+import mongoose from "mongoose";
 const slugify = (value) =>
     value
         .toLowerCase()
@@ -38,6 +38,10 @@ const buildUniqueSlug = async (userId, name, excludeId = null) => {
 };
 
 const findOwnedTag = async (userId, tagId) => {
+    if (!mongoose.isValidObjectId(tagId)) {
+        throw new ApiError(400, "Invalid tag id");
+    }
+
     const tag = await Tag.findOne({
         _id: tagId,
         user: userId,
@@ -130,15 +134,18 @@ const withUsageCounts = async (userId, tags) => {
 };
 
 const findOwnedResource = async (userId, resourceType, resourceId) => {
-    const Model = resourceType === "note" ? Note : Task;
+   if (!["note", "task"].includes(resourceType)) {
+    throw new ApiError(400, "Invalid resource type");
+}
+const Model = resourceType === "note" ? Note : Task;
     const resourceName = resourceType === "note" ? "Note" : "Task";
-    const extraFilters = resourceType === "note" ? {} : {};
+    
 
     const resource = await Model.findOne({
         _id: resourceId,
         user: userId,
         isDeleted: false,
-        ...extraFilters,
+        
     });
 
     if (!resource) {

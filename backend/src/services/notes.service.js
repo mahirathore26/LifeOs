@@ -26,26 +26,41 @@ const buildNotesFilters = (userId, query = {}) => {
         user: new mongoose.Types.ObjectId(userId),
     };
 
-    if (query.isDeleted === true) {
-        filters.isDeleted = true;
-    } else {
-        filters.isDeleted = false;
-    }
+    const isDeleted = query.isDeleted === "true";
+const isArchived =
+    query.isArchived === undefined
+        ? undefined
+        : query.isArchived === "true";
 
-    if (typeof query.isArchived === "boolean") {
-        filters.isArchived = query.isArchived;
-    }
+const isPinned =
+    query.isPinned === undefined
+        ? undefined
+        : query.isPinned === "true";
 
-    if (typeof query.isPinned === "boolean") {
-        filters.isPinned = query.isPinned;
-    }
+filters.isDeleted = isDeleted;
+
+if (isArchived !== undefined) {
+    filters.isArchived = isArchived;
+}
+
+if (isPinned !== undefined) {
+    filters.isPinned = isPinned;
+}
 
     if (query.project) {
-        filters.project = new mongoose.Types.ObjectId(query.project);
+        if (!mongoose.isValidObjectId(query.project)) {
+    throw new ApiError(400, "Invalid project id");
+}
+
+filters.project = new mongoose.Types.ObjectId(query.project);
     }
 
     if (query.tag) {
-        filters.tags = new mongoose.Types.ObjectId(query.tag);
+        if (!mongoose.isValidObjectId(query.tag)) {
+    throw new ApiError(400, "Invalid tag id");
+}
+
+filters.tags = new mongoose.Types.ObjectId(query.tag);
     }
 
     if (query.search) {
@@ -54,7 +69,7 @@ const buildNotesFilters = (userId, query = {}) => {
         filters.$or = [
             { title: regex },
             { content: regex },
-            { tags: regex },
+            
         ];
     }
 

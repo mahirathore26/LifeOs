@@ -62,6 +62,9 @@ const buildFilters = (userId, query = {}) => {
 	}
 
 	if (query.tag) {
+		if (!mongoose.isValidObjectId(query.tag)) {
+			throw new ApiError(400, "Invalid tag ID format");
+		}
 		filters.tags = new mongoose.Types.ObjectId(query.tag);
 	}
 
@@ -85,6 +88,10 @@ const buildFilters = (userId, query = {}) => {
 };
 
 const findOwned = async (userId, id, includeDeleted = true) => {
+	if (!mongoose.isValidObjectId(id)) {
+		throw new ApiError(400, "Invalid learning resource ID format");
+	}
+
 	const filters = { _id: id, user: userId };
 
 	if (!includeDeleted) filters.isDeleted = false;
@@ -344,7 +351,7 @@ export const deleteSessionService = async (userId, id, sessionId) => {
 	if (!session) throw new ApiError(404, "Session not found");
 
 	const duration = session.durationMinutes || 0;
-	session.remove();
+	session.deleteOne();
 	doc.timeSpentMinutes = Math.max(0, (doc.timeSpentMinutes || 0) - duration);
 
 	// recalc and save

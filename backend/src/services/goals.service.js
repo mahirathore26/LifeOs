@@ -17,6 +17,9 @@ export const getGoalsService = async (userId, query = {}) => {
 };
 
 export const getGoalByIdService = async (userId, id) => {
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(400, "Invalid goal ID format");
+    }
     const goal = await LearningGoal.findOne({ _id: id, user: userId });
     if (!goal) throw new ApiError(404, "Goal not found");
     return goal;
@@ -38,6 +41,9 @@ export const deleteGoalService = async (userId, id) => {
 };
 
 export const addResourceToGoalService = async (userId, goalId, resourceId) => {
+    if (!mongoose.isValidObjectId(resourceId)) {
+        throw new ApiError(400, "Invalid resource ID format");
+    }
     const goal = await getGoalByIdService(userId, goalId);
     const resource = await LearningResource.findOne({ _id: resourceId, user: userId });
     if (!resource) throw new ApiError(400, "Invalid learning resource");

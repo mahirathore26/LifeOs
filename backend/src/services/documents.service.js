@@ -25,6 +25,9 @@ const buildDocumentFilters = (userId, query = {}) => {
     };
 
     if (query.project) {
+        if (!mongoose.isValidObjectId(query.project)) {
+            throw new ApiError(400, "Invalid project ID format");
+        }
         filters.project = new mongoose.Types.ObjectId(query.project);
     }
 
@@ -53,6 +56,10 @@ const buildDocumentFileMetadata = (file, cloudinaryResponse) => ({
 });
 
 const findOwnedDocument = async (userId, documentId) => {
+    if (!mongoose.isValidObjectId(documentId)) {
+        throw new ApiError(400, "Invalid document ID format");
+    }
+
     const document = await Document.findOne({
         _id: documentId,
         user: userId,
