@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import api, { extractApiData } from '../../lib/api';
+import tasksService from './services/tasksService';
 
 const initialState = {
   items: [],
@@ -10,11 +10,7 @@ const initialState = {
 
 export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async (params = {}, { rejectWithValue }) => {
   try {
-    const response = await api.get('/tasks', { params });
-    return {
-      data: extractApiData(response),
-      pagination: response?.data?.pagination ?? null,
-    };
+    return await tasksService.getTasks(params);
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to load tasks');
   }
@@ -22,8 +18,7 @@ export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async (params = {
 
 export const createTask = createAsyncThunk('tasks/createTask', async (payload, { rejectWithValue }) => {
   try {
-    const response = await api.post('/tasks', payload);
-    return extractApiData(response);
+    return await tasksService.createTask(payload);
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to create task');
   }
@@ -31,8 +26,7 @@ export const createTask = createAsyncThunk('tasks/createTask', async (payload, {
 
 export const updateTask = createAsyncThunk('tasks/updateTask', async ({ id, payload }, { rejectWithValue }) => {
   try {
-    const response = await api.patch(`/tasks/${id}`, payload);
-    return extractApiData(response);
+    return await tasksService.updateTask(id, payload);
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to update task');
   }
@@ -40,8 +34,7 @@ export const updateTask = createAsyncThunk('tasks/updateTask', async ({ id, payl
 
 export const deleteTask = createAsyncThunk('tasks/deleteTask', async (id, { rejectWithValue }) => {
   try {
-    await api.delete(`/tasks/${id}`);
-    return id;
+    return await tasksService.deleteTask(id);
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to delete task');
   }
@@ -49,8 +42,7 @@ export const deleteTask = createAsyncThunk('tasks/deleteTask', async (id, { reje
 
 export const restoreTask = createAsyncThunk('tasks/restoreTask', async (id, { rejectWithValue }) => {
   try {
-    const response = await api.patch(`/tasks/${id}/restore`);
-    return extractApiData(response);
+    return await tasksService.restoreTask(id);
   } catch (error) {
     return rejectWithValue(error.response?.data?.message || 'Failed to restore task');
   }
