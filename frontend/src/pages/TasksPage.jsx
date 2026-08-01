@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
@@ -13,6 +12,7 @@ import {
   Edit3,
   Filter,
   FolderKanban,
+  Kanban,
   List,
   Plus,
   RefreshCw,
@@ -61,12 +61,13 @@ export default function TasksPage() {
   const dispatch = useDispatch();
   const { items, loading, error, pagination } = useSelector((state) => state.tasks);
   const { items: projects } = useSelector((state) => state.projects);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'kanban'
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', project: '', isDeleted: false });
   const [sortBy, setSortBy] = useState('updatedAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [page, setPage] = useState(1);
-  const [limit] = useState(6);
+  const [limit] = useState(10);
   const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState('create');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -132,6 +133,14 @@ export default function TasksPage() {
 
     return list;
   }, [items, sortBy, sortOrder]);
+
+  const kanbanColumns = useMemo(() => {
+    return {
+      todo: sortedItems.filter((t) => (t.status || 'todo') === 'todo'),
+      in_progress: sortedItems.filter((t) => t.status === 'in_progress'),
+      completed: sortedItems.filter((t) => t.status === 'completed'),
+    };
+  }, [sortedItems]);
 
   const refreshTasks = () => dispatch(fetchTasks({ page, limit, search: query, ...filters, sortBy, sortOrder }));
 
@@ -201,15 +210,19 @@ export default function TasksPage() {
     }
   };
 
-  const handleToggleComplete = async (task) => {
-    const nextStatus = task.status === 'completed' ? 'todo' : 'completed';
+  const handleStatusChange = async (task, newStatus) => {
     try {
-      await dispatch(updateTask({ id: task._id, payload: { status: nextStatus } })).unwrap();
-      toast.success(nextStatus === 'completed' ? 'Task completed' : 'Task reopened');
+      await dispatch(updateTask({ id: task._id, payload: { status: newStatus } })).unwrap();
+      toast.success(`Task moved to ${statusLabel(newStatus)}`);
       await refreshTasks();
     } catch (error) {
       toast.error(error || 'Status update failed');
     }
+  };
+
+  const handleToggleComplete = async (task) => {
+    const nextStatus = task.status === 'completed' ? 'todo' : 'completed';
+    await handleStatusChange(task, nextStatus);
   };
 
   return (
@@ -244,7 +257,24 @@ export default function TasksPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SectionCard title="Task library" subtitle="Search, filter and organize your commitments" action={<button onClick={() => openModal()} className="rounded-full border border-white/10 bg-slate-800/70 p-2 text-slate-200"><Plus size={16} /></button>}>
+        <SectionCard
+          title="Task library"
+          subtitle="Search, filter and organize your commitments"
+          action={
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode(viewMode === 'list' ? 'kanban' : 'list')}
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-slate-800/70 px-3 py-1.5 text-xs text-slate-200"
+              >
+                {viewMode === 'list' ? <Kanban size={14} /> : <List size={14} />}
+                {viewMode === 'list' ? 'Kanban board' : 'List view'}
+              </button>
+              <button onClick={() => openModal()} className="rounded-full border border-white/10 bg-slate-800/70 p-2 text-slate-200">
+                <Plus size={16} />
+              </button>
+            </div>
+          }
+        >
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-800/70 px-3 py-2 text-sm text-slate-300">
               <Search size={16} />
@@ -291,34 +321,76 @@ export default function TasksPage() {
             </button>
           </div>
 
-          {loading ? <EmptyState message="Loading tasks…" /> : sortedItems.length === 0 ? <EmptyState message="No tasks match your current filters." /> : <div className="space-y-3">
-            {sortedItems.map((task) => (
-              <motion.article key={task._id} layout className="rounded-3xl border border-white/10 bg-slate-800/70 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-slate-100">{task.title}</h4>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.2em] ${task.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : task.status === 'in_progress' ? 'bg-amber-500/10 text-amber-300' : 'bg-slate-700/70 text-slate-300'}`}>{statusLabel(task.status)}</span>
+          {loading ? (
+            <EmptyState message="Loading tasks…" />
+          ) : sortedItems.length === 0 ? (
+            <EmptyState message="No tasks match your current filters." />
+          ) : viewMode === 'kanban' ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <KanbanColumn
+                title="Todo"
+                count={kanbanColumns.todo.length}
+                tasks={kanbanColumns.todo}
+                onSelect={setSelectedTaskId}
+                onEdit={openModal}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onMoveStatus={handleStatusChange}
+                badgeColor="bg-slate-700/70 text-slate-300"
+              />
+              <KanbanColumn
+                title="In Progress"
+                count={kanbanColumns.in_progress.length}
+                tasks={kanbanColumns.in_progress}
+                onSelect={setSelectedTaskId}
+                onEdit={openModal}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onMoveStatus={handleStatusChange}
+                badgeColor="bg-amber-500/10 text-amber-300 border-amber-400/20"
+              />
+              <KanbanColumn
+                title="Completed"
+                count={kanbanColumns.completed.length}
+                tasks={kanbanColumns.completed}
+                onSelect={setSelectedTaskId}
+                onEdit={openModal}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+                onMoveStatus={handleStatusChange}
+                badgeColor="bg-emerald-500/10 text-emerald-300 border-emerald-400/20"
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sortedItems.map((task) => (
+                <motion.article key={task._id} layout className="rounded-3xl border border-white/10 bg-slate-800/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-slate-100">{task.title}</h4>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.2em] ${task.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : task.status === 'in_progress' ? 'bg-amber-500/10 text-amber-300' : 'bg-slate-700/70 text-slate-300'}`}>{statusLabel(task.status)}</span>
+                      </div>
+                      {task.description ? <p className="mt-2 line-clamp-2 text-sm text-slate-400">{task.description}</p> : null}
                     </div>
-                    {task.description ? <p className="mt-2 line-clamp-2 text-sm text-slate-400">{task.description}</p> : null}
+                    <button onClick={() => handleToggleComplete(task)} className={`rounded-full p-2 ${task.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-900/70 text-slate-300'}`}>
+                      <CheckCircle2 size={18} />
+                    </button>
                   </div>
-                  <button onClick={() => handleToggleComplete(task)} className={`rounded-full p-2 ${task.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-900/70 text-slate-300'}`}>
-                    <CheckCircle2 size={18} />
-                  </button>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-300">
-                  <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">{priorityLabel(task.priority)}</span>
-                  {task.dueDate ? <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">Due {new Date(task.dueDate).toLocaleDateString()}</span> : null}
-                  {task.project ? <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">Project {task.project}</span> : null}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button onClick={() => setSelectedTaskId(task._id)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">Open</button>
-                  <button onClick={() => openModal(task)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"><Edit3 size={14} className="mr-1 inline" />Edit</button>
-                  {task.isDeleted ? <button onClick={() => handleRestore(task)} className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300"><Undo2 size={14} className="mr-1 inline" />Restore</button> : <button onClick={() => handleDelete(task)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"><Trash2 size={14} className="mr-1 inline" />Delete</button>}
-                </div>
-              </motion.article>
-            ))}
-          </div>}
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-300">
+                    <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">{priorityLabel(task.priority)}</span>
+                    {task.dueDate ? <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">Due {new Date(task.dueDate).toLocaleDateString()}</span> : null}
+                    {task.project ? <span className="rounded-full border border-white/10 bg-slate-900/70 px-2.5 py-1">Project</span> : null}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button onClick={() => setSelectedTaskId(task._id)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200">Open</button>
+                    <button onClick={() => openModal(task)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"><Edit3 size={14} className="mr-1 inline" />Edit</button>
+                    {task.isDeleted ? <button onClick={() => handleRestore(task)} className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300"><Undo2 size={14} className="mr-1 inline" />Restore</button> : <button onClick={() => handleDelete(task)} className="rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-slate-200"><Trash2 size={14} className="mr-1 inline" />Delete</button>}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          )}
 
           <div className="mt-5 flex items-center justify-between">
             <div className="text-sm text-slate-400">Page {pagination?.page || 1} of {pagination?.totalPages || 1}</div>
@@ -413,6 +485,46 @@ export default function TasksPage() {
           </div>
         </form>
       </ModalShell> : null}
+    </div>
+  );
+}
+
+function KanbanColumn({ title, count, tasks, onSelect, onEdit, onDelete, onRestore, onMoveStatus, badgeColor }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-3 space-y-3">
+      <div className="flex items-center justify-between px-1">
+        <h4 className="text-sm font-semibold text-slate-200">{title}</h4>
+        <span className={`rounded-full px-2 py-0.5 text-xs ${badgeColor}`}>{count}</span>
+      </div>
+      <div className="space-y-2.5">
+        {tasks.length === 0 ? (
+          <p className="text-xs text-slate-500 italic p-2">No tasks</p>
+        ) : (
+          tasks.map((task) => (
+            <div key={task._id} className="rounded-2xl border border-white/10 bg-slate-800/80 p-3 space-y-2">
+              <h5 className="font-medium text-sm text-slate-100">{task.title}</h5>
+              {task.description && <p className="text-xs text-slate-400 line-clamp-2">{task.description}</p>}
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span className="capitalize">{task.priority} priority</span>
+                {task.dueDate && <span>{new Date(task.dueDate).toLocaleDateString()}</span>}
+              </div>
+              <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
+                <button onClick={() => onSelect(task._id)} className="text-[11px] text-slate-300 hover:text-white px-2 py-1 rounded bg-slate-700/50">View</button>
+                <button onClick={() => onEdit(task)} className="text-[11px] text-slate-300 hover:text-white px-2 py-1 rounded bg-slate-700/50">Edit</button>
+                {task.status !== 'todo' && (
+                  <button onClick={() => onMoveStatus(task, 'todo')} className="text-[11px] text-slate-400 hover:text-slate-200 px-1.5 py-1">→ Todo</button>
+                )}
+                {task.status !== 'in_progress' && (
+                  <button onClick={() => onMoveStatus(task, 'in_progress')} className="text-[11px] text-amber-400 hover:text-amber-300 px-1.5 py-1">→ Progress</button>
+                )}
+                {task.status !== 'completed' && (
+                  <button onClick={() => onMoveStatus(task, 'completed')} className="text-[11px] text-emerald-400 hover:text-emerald-300 px-1.5 py-1">→ Done</button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
