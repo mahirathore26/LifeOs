@@ -11,6 +11,7 @@ import LearningPage from '../pages/LearningPage';
 import DocumentsPage from '../pages/DocumentsPage';
 import SearchPage from '../pages/SearchPage';
 import ProfilePage from '../pages/ProfilePage';
+import TagsPage from '../pages/TagsPage';
 import VerifyEmailPage from '../pages/VerifyEmailPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -40,6 +41,7 @@ export default function AppRoutes() {
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/learning" element={<LearningPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/tags" element={<TagsPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>

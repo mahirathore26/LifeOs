@@ -6,6 +6,7 @@ import notesReducer from '../features/notes/notesSlice';
 import projectsReducer from '../features/projects/projectsSlice';
 import learningReducer from '../features/learning/learningSlice';
 import documentsReducer from '../features/documents/documentsSlice';
+import tagsReducer from '../features/tags/tagsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     projects: projectsReducer,
     learning: learningReducer,
     documents: documentsReducer,
+    tags: tagsReducer,
   },
 });
 

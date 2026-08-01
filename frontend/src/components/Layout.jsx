@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, CheckSquare, StickyNote, FolderKanban, GraduationCap, Search, LogOut, Sparkles, FileText, User } from 'lucide-react';
+import { Home, CheckSquare, StickyNote, FolderKanban, GraduationCap, Search, LogOut, Sparkles, FileText, User, Tag } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutLocal } from '../features/auth/authSlice';
 import api from '../lib/api';
@@ -12,6 +12,7 @@ const links = [
   { to: '/projects', label: 'Projects', icon: FolderKanban },
   { to: '/learning', label: 'Learning', icon: GraduationCap },
   { to: '/documents', label: 'Documents', icon: FileText },
+  { to: '/tags', label: 'Tags', icon: Tag },
   { to: '/search', label: 'Search', icon: Search },
 ];
 
